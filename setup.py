@@ -24,10 +24,20 @@ setup(
         "python-dotenv>=1.0.0",
         "anthropic>=0.18.0",
         "click>=8.1.7",
+        "flask>=3.0.0",
+        "flask-cors>=4.0.0",
     ],
+    package_data={
+        "reddit_summarizer": [
+            "web/templates/*.html",
+            "web/static/css/*.css",
+        ],
+    },
+    include_package_data=True,
     entry_points={
         "console_scripts": [
             "reddit-summarizer=reddit_summarizer.cli:main",
+            "reddit-summarizer-web=reddit_summarizer.web:run_app",
         ],
     },
 )

@@ -1,6 +1,6 @@
 # Reddit Thread Summarizer
 
-A powerful CLI tool that fetches Reddit threads and generates AI-powered summaries using Claude AI. Perfect for quickly understanding lengthy Reddit discussions without reading through hundreds of comments.
+A powerful tool that fetches Reddit threads and generates AI-powered summaries using Claude AI. Available as both a **web interface** and **command-line tool**. Perfect for quickly understanding lengthy Reddit discussions without reading through hundreds of comments.
 
 ## Features
 
@@ -8,7 +8,8 @@ A powerful CLI tool that fetches Reddit threads and generates AI-powered summari
 - Generate comprehensive, brief, or key-point summaries
 - Analyze sentiment and tone of discussions
 - Support for customizable comment limits
-- Clean, easy-to-use command-line interface
+- **Modern web interface** with clean, responsive design
+- Command-line interface for automation and scripting
 - Powered by Claude AI for high-quality summaries
 
 ## Prerequisites
@@ -62,7 +63,38 @@ ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
 ## Usage
 
-### Summarize a Thread
+### Web Interface (Recommended for Most Users)
+
+Start the web server:
+```bash
+python run_web.py
+```
+
+Or if installed via pip:
+```bash
+reddit-summarizer-web
+```
+
+Then open your browser and navigate to:
+```
+http://localhost:5000
+```
+
+The web interface provides:
+- Simple form to paste Reddit thread URLs
+- Choose summary type (comprehensive, brief, key points)
+- Set maximum number of comments to analyze
+- View results in a clean, readable format
+- Sentiment analysis with one click
+
+**Environment Variables for Web Server:**
+- `FLASK_HOST`: Host to bind to (default: 0.0.0.0)
+- `FLASK_PORT`: Port to use (default: 5000)
+- `FLASK_DEBUG`: Enable debug mode (default: False)
+
+### Command-Line Interface
+
+#### Summarize a Thread
 
 Generate a comprehensive summary:
 ```bash
@@ -138,12 +170,22 @@ vibes/
 │   ├── __init__.py          # Package initialization
 │   ├── cli.py               # Command-line interface
 │   ├── fetcher.py           # Reddit API integration
-│   └── summarizer.py        # AI summarization logic
+│   ├── summarizer.py        # AI summarization logic
+│   └── web/                 # Web interface
+│       ├── __init__.py      # Web module initialization
+│       ├── app.py           # Flask application
+│       ├── templates/       # HTML templates
+│       │   └── index.html   # Main web page
+│       └── static/          # Static assets
+│           └── css/
+│               └── style.css # Styling
 ├── .env.example             # Environment variables template
-├── .gitignore              # Git ignore rules
-├── README.md               # This file
-├── requirements.txt        # Python dependencies
-└── setup.py               # Package setup configuration
+├── .gitignore               # Git ignore rules
+├── LICENSE                  # MIT License
+├── README.md                # This file
+├── requirements.txt         # Python dependencies
+├── run_web.py               # Web server launcher
+└── setup.py                 # Package setup configuration
 ```
 
 ## How It Works
@@ -158,6 +200,8 @@ vibes/
 - `praw`: Reddit API wrapper
 - `anthropic`: Claude AI SDK
 - `click`: CLI framework
+- `flask`: Web framework
+- `flask-cors`: Cross-origin resource sharing
 - `python-dotenv`: Environment variable management
 
 ## Troubleshooting

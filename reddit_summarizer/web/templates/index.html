@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reddit Thread Summarizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Reddit Thread Summarizer</h1>
+            <p class="subtitle">AI-powered summaries of Reddit discussions using Claude</p>
+        </header>
+
+        <main>
+            <div class="input-section">
+                <form id="summarizerForm">
+                    <div class="form-group">
+                        <label for="threadUrl">Reddit Thread URL</label>
+                        <input
+                            type="text"
+                            id="threadUrl"
+                            name="url"
+                            placeholder="https://www.reddit.com/r/example/comments/..."
+                            required
+                        >
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="summaryType">Summary Type</label>
+                            <select id="summaryType" name="type">
+                                <option value="comprehensive">Comprehensive</option>
+                                <option value="brief">Brief</option>
+                                <option value="key_points">Key Points</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="maxComments">Max Comments</label>
+                            <input
+                                type="number"
+                                id="maxComments"
+                                name="max_comments"
+                                value="50"
+                                min="1"
+                                max="500"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary" data-action="summarize">
+                            Summarize Thread
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-action="sentiment">
+                            Analyze Sentiment
+                        </button>
+                        <button type="button" class="btn btn-tertiary" data-action="fetch">
+                            Fetch Thread
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="loadingSpinner" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Processing your request...</p>
+            </div>
+
+            <div id="errorMessage" class="error-message hidden"></div>
+
+            <div id="resultsSection" class="results-section hidden">
+                <div class="thread-info">
+                    <h2 id="threadTitle"></h2>
+                    <div class="thread-meta">
+                        <span id="threadSubreddit"></span>
+                        <span id="threadAuthor"></span>
+                        <span id="threadStats"></span>
+                    </div>
+                </div>
+
+                <div class="results-content">
+                    <h3 id="resultsHeading">Summary</h3>
+                    <div id="resultsText"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by <a href="https://www.anthropic.com/claude" target="_blank">Claude AI</a></p>
+        </footer>
+    </div>
+
+    <script>
+        const form = document.getElementById('summarizerForm');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultsSection = document.getElementById('resultsSection');
+        const resultsHeading = document.getElementById('resultsHeading');
+        const resultsText = document.getElementById('resultsText');
+
+        function showLoading() {
+            loadingSpinner.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+        }
+
+        function hideLoading() {
+            loadingSpinner.classList.add('hidden');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+            hideLoading();
+        }
+
+        function displayThreadInfo(threadInfo) {
+            document.getElementById('threadTitle').textContent = threadInfo.title;
+            document.getElementById('threadSubreddit').textContent = `r/${threadInfo.subreddit}`;
+            document.getElementById('threadAuthor').textContent = `u/${threadInfo.author}`;
+            document.getElementById('threadStats').textContent =
+                `${threadInfo.score} points • ${threadInfo.num_comments} comments`;
+        }
+
+        function displayResults(heading, content) {
+            resultsHeading.textContent = heading;
+            resultsText.innerHTML = content.replace(/\n/g, '<br>');
+            resultsSection.classList.remove('hidden');
+            hideLoading();
+        }
+
+        async function handleRequest(action) {
+            const url = document.getElementById('threadUrl').value;
+            const maxComments = parseInt(document.getElementById('maxComments').value);
+
+            if (!url) {
+                showError('Please enter a Reddit thread URL');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                let endpoint, requestData;
+
+                if (action === 'summarize') {
+                    const summaryType = document.getElementById('summaryType').value;
+                    endpoint = '/api/summarize';
+                    requestData = { url, type: summaryType, max_comments: maxComments };
+                } else if (action === 'sentiment') {
+                    endpoint = '/api/sentiment';
+                    requestData = { url, max_comments: maxComments };
+                } else if (action === 'fetch') {
+                    endpoint = '/api/fetch';
+                    requestData = { url, max_comments: maxComments };
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'An error occurred');
+                }
+
+                displayThreadInfo(data.thread_info);
+
+                if (action === 'summarize') {
+                    displayResults('Summary', data.summary);
+                } else if (action === 'sentiment') {
+                    displayResults('Sentiment Analysis', data.analysis);
+                } else if (action === 'fetch') {
+                    displayResults('Thread Content', data.thread_text);
+                }
+
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            }
+        }
+
+        // Handle form submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleRequest('summarize');
+        });
+
+        // Handle button clicks
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                if (e.target.dataset.action !== 'summarize') {
+                    e.preventDefault();
+                }
+                handleRequest(e.target.dataset.action);
+            });
+        });
+    </script>
+</body>
+</html>
